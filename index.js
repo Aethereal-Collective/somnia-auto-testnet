@@ -1,4 +1,4 @@
-import { createWalletClient, createPublicClient, http, parseEther } from "viem";
+import { createWalletClient, createPublicClient, http, parseEther, formatEther } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import readline from "readline";
 
@@ -32,7 +32,7 @@ const publicClient = createPublicClient({
 });
 
 async function startSwapLoop() {
-	console.log(`\n🕒 Starting infinite swap loop with interval ${INTERVAL / 1000} seconds...`);
+	console.log(`\n🕒 Starting infinite swap loop with interval ${INTERVAL / 60000} minutes...`);
 
 	while (true) {
 		console.log(`\n🔄 Swap Cycle at ${new Date().toLocaleTimeString()}`);
@@ -41,9 +41,9 @@ async function startSwapLoop() {
 			const sttBalance = await getNativeBalance(publicClient, account.address);
 			const usdtBalance = await getTokenBalance(CA.USDTSOMNEX, publicClient, account.address);
 
-			console.log(`💰 STT Balance: ${sttBalance} | USDT Balance: ${usdtBalance}`);
+			console.log(`💰 STT Balance: ${formatEther(sttBalance)} | USDT Balance: ${formatEther(usdtBalance)}`);
 
-			if (usdtBalance > 0n) {
+			if (usdtBalance > 0) {
 				const allowance = await getAllowance(CA.USDTSOMNEX, account.address, CA.ROUTERSOMNEX, publicClient);
 
 				if (allowance < usdtBalance) {
@@ -55,7 +55,7 @@ async function startSwapLoop() {
 				console.log("🔁 Swapping USDT → STT...");
 				const swapHash = await swapExactTokensForTokens(usdtBalance, [CA.USDTSOMNEX, CA.STT], walletClient, publicClient, account.address, CA.ROUTERSOMNEX);
 				console.log("💱 Swap Tx Hash (USDT→STT):", swapHash);
-			} else if (sttBalance > 0n) {
+			} else if (sttBalance > 0) {
 				console.log("🔁 Swapping STT → USDT...");
 
 				const randomAmount = (Math.random() * (0.0005 - 0.0001) + 0.0001).toFixed(6);
@@ -80,7 +80,7 @@ async function startSwapLoop() {
 async function start() {
 	console.log(`🔑 Using account: ${account.address}`);
 
-	const intervalInput = await askQuestion("⏱️ Enter interval in minutes (default 5): ");
+	const intervalInput = await askQuestion("⏱️ Enter interval in minutes (default 5):  ");
 	INTERVAL = (parseInt(intervalInput) || 1) * 60 * 1000;
 
 	rl.close();
